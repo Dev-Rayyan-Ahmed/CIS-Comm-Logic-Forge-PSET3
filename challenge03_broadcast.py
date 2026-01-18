@@ -1,9 +1,12 @@
-def solve_feed(N, Q, K, operations):
+import heapq
+
+def solve_feed_optimized(N, Q, K, operations):
     #initializing data structures
-    #unit_msgs: stores messages sent by each unit (msg_id, val, time)
+    #unit_msgs: list of lists for each unit. 
+    #Structure: (time, msg_id, value)
     unit_msgs = [[] for _ in range(N + 1)]
     
-    #subs: stores active subscriptions {user: {sub_to: start_time}}
+    #subs: tracking subscriptions {user: {sub_to: start_time}}
     subs = {}
     
     output = []
@@ -11,7 +14,7 @@ def solve_feed(N, Q, K, operations):
     current_time = 0
     msg_id_ctr = 1
     
-    #processing operations
+    #processing all operations
     for op_str in operations:
         parts = op_str.split()
         op = parts[0]
@@ -21,23 +24,23 @@ def solve_feed(N, Q, K, operations):
             u = int(parts[1])
             m = int(parts[2])
             
-            #creating message tuple: (time, id, val)
-            msg = {'time': current_time, 'id': msg_id_ctr, 'val': m}
+            #  storing message as tuple (time, id, val)
+            unit_msgs[u].append((current_time, msg_id_ctr, m))
             msg_id_ctr += 1
             
-            #storing message with k limit check
-            unit_msgs[u].append(msg)
+            #keeping only K most recent messages
             if len(unit_msgs[u]) > K:
-                unit_msgs[u].pop(0) #removing oldest
+                unit_msgs[u].pop(0) 
                 
         elif op == 'S':
             u = int(parts[1])
             v = int(parts[2])
             
-            #setting subscription start time
+            #initializing user dict if needed
             if u not in subs:
                 subs[u] = {}
-            #only update start time if not already subscribed
+            
+            #recording subscription time if new
             if v not in subs[u]:
                 subs[u][v] = current_time
                 
@@ -51,33 +54,66 @@ def solve_feed(N, Q, K, operations):
                 
         elif op == 'F':
             u = int(parts[1])
-            visible = []
             
-            #fetching own messages (always visible)
-            visible.extend(unit_msgs[u])
+            #using a max-heap to find top 10 newest
+            #Python heap is min-heap, so we use negative time
+            #Heap item: (-time, sender_id, index_in_sender_list)
+            pq = []
             
-            #fetching subscription messages
+            #helper to push newest valid message from a sender
+            def push_sender_latest(sender_id, min_time_req):
+                msgs = unit_msgs[sender_id]
+                if msgs:
+                    #checking the newest message first (end of list)
+                    idx = len(msgs) - 1
+                    msg_time = msgs[idx][0]
+                    
+                    #only adding if it meets visibility time requirement
+                    if msg_time >= min_time_req:
+                        heapq.heappush(pq, (-msg_time, sender_id, idx))
+
+            #1. adding Self (always visible, min_time = 0)
+            push_sender_latest(u, 0)
+            
+            #2. adding Subscriptions (visible if msg_time >= sub_start_time)
             if u in subs:
                 for v, start_time in subs[u].items():
-                    #checking only messages from v sent after subscription started
-                    for msg in unit_msgs[v]:
-                        if msg['time'] >= start_time:
-                            visible.append(msg)
+                    push_sender_latest(v, start_time)
             
-            visible.sort(key=lambda x: x['time'], reverse=True)
+            found_ids = []
             
-            #taking top 10
-            top_10 = visible[:10]
-            
-            if not top_10:
+            #extracting up to 10 newest messages
+            while pq and len(found_ids) < 10:
+                neg_time, sender, idx = heapq.heappop(pq)
+                
+                #getting the actual message ID
+                #unit_msgs[sender][idx] is (time, id, val)
+                msg_id = unit_msgs[sender][idx][1]
+                found_ids.append(str(msg_id))
+                
+                #trying to push the NEXT older message from the same sender
+                if idx > 0:
+                    next_idx = idx - 1
+                    next_msg = unit_msgs[sender][next_idx]
+                    next_time = next_msg[0]
+                    
+                    #checking visibility constraint for this older message
+                    #if sender is self, limit is 0. If sub, limit is start_time
+                    limit_time = 0
+                    if sender != u:
+                         limit_time = subs[u][sender]
+                    
+                    if next_time >= limit_time:
+                        heapq.heappush(pq, (-next_time, sender, next_idx))
+
+            if not found_ids:
                 output.append("EMPTY")
             else:
-                ids = [str(m['id']) for m in top_10]
-                output.append(" ".join(ids))
+                output.append(" ".join(found_ids))
                 
     return output
 
-# --- HardCoded Input ---
+# --- Hard Coded Input ---
 N = 3
 Q = 9
 K = 2
@@ -94,8 +130,8 @@ operations = [
 ]
 
 # --- Execution ---
-results = solve_feed(N, Q, K, operations)
+results = solve_feed_optimized(N, Q, K, operations)
 
-#printing results
+#printing final answers
 for line in results:
     print(line)
