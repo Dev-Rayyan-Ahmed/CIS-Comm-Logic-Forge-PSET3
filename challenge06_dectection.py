@@ -1,16 +1,9 @@
-def solve_frequency(N, nums):
-    
-    target_count = N // 2
-
-    counts = {}
-    
-    for x in nums:
-        # incrementing  count 
-        counts[x] = counts.get(x, 0) + 1
-        
-        if counts[x] == 2:
-            return x
-            
+def gap_check(N, nums):
+    for k in range(1, 4):
+        for i in range(len(nums) - k):
+            if nums[i] == nums[i + k]:
+                return nums[i]
+                
     return -1
 
 # --- Hard Coded Input ---
@@ -18,4 +11,4 @@ len_arr = 6
 nums = [2, 1, 2, 5, 3, 2]
 
 # --- Execution ---
-print(solve_frequency(len_arr, nums))
+print(gap_check(len_arr, nums))
