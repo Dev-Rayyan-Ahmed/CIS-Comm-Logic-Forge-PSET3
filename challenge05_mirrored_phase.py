@@ -4,7 +4,7 @@ def mirrored(s):
         
     start = 0
     end = 0
-    
+
     def expand(left, right):
         # expanding outwards while characters match
         while left >= 0 and right < len(s) and s[left] == s[right]:
@@ -28,7 +28,7 @@ def mirrored(s):
             
     return s[start : end + 1]
 
-# --- Hard Coded Input ---
+# --- Hard Coded Input --
 s_input = "babad"
 
 # --- Execution ---
