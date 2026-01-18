@@ -13,7 +13,6 @@ def solve_feed_optimized(N, Q, K, operations):
     
     current_time = 0
     msg_id_ctr = 1
-    
     #processing all operations
     for op_str in operations:
         parts = op_str.split()
