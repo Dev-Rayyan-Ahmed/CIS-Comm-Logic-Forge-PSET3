@@ -1,4 +1,4 @@
-def detect_anagrams_naive(s, p):
+def detect_anagrams(s, p):
     n = len(s)
     k = len(p)
     indices = []
@@ -23,5 +23,5 @@ s_input = "cbaebabacd"
 p_input = "abc"
 
 # --- Execution ---
-result = detect_anagrams_naive(s_input, p_input)
+result = detect_anagrams(s_input, p_input)
 print(result)
